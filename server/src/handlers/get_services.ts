@@ -1,11 +1,20 @@
+import { db } from '../db';
+import { serviceInfoTable } from '../db/schema';
 import { type ServiceInfo } from '../schema';
+import { asc } from 'drizzle-orm';
 
-export async function getServices(): Promise<ServiceInfo[]> {
-    // This is a placeholder declaration! Real code should be implemented here.
-    // The goal of this handler is to fetch all service information
-    // ordered by display_order for showing on the website's services section.
-    // Services include customs clearance, shipping agency, port-to-door delivery,
-    // truck/fleet management, warehousing, inventory solutions, e-commerce delivery,
-    // and logistics consulting.
-    return [];
-}
+export const getServices = async (): Promise<ServiceInfo[]> => {
+  try {
+    // Fetch all services ordered by display_order
+    const services = await db.select()
+      .from(serviceInfoTable)
+      .orderBy(asc(serviceInfoTable.display_order))
+      .execute();
+
+    // Return services as they are (no numeric conversions needed)
+    return services;
+  } catch (error) {
+    console.error('Failed to fetch services:', error);
+    throw error;
+  }
+};

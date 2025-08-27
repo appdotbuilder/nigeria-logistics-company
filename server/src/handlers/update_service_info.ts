@@ -1,18 +1,55 @@
+import { db } from '../db';
+import { serviceInfoTable } from '../db/schema';
+import { eq } from 'drizzle-orm';
 import { type UpdateServiceInfoInput, type ServiceInfo } from '../schema';
 
-export async function updateServiceInfo(input: UpdateServiceInfoInput): Promise<ServiceInfo> {
-    // This is a placeholder declaration! Real code should be implemented here.
-    // The goal of this handler is to update service information
-    // allowing the logistics company to modify service descriptions, titles,
-    // featured status, and display order for their website presentation.
-    return Promise.resolve({
-        id: input.id,
-        service_type: 'customs_clearance' as const, // Placeholder service type
-        title: input.title || 'Placeholder Service Title',
-        description: input.description || 'Placeholder service description',
-        icon: input.icon || null,
-        is_featured: input.is_featured ?? false,
-        display_order: input.display_order ?? 1,
-        updated_at: new Date()
-    } as ServiceInfo);
-}
+export const updateServiceInfo = async (input: UpdateServiceInfoInput): Promise<ServiceInfo> => {
+  try {
+    // First, verify the service info record exists
+    const existingRecord = await db.select()
+      .from(serviceInfoTable)
+      .where(eq(serviceInfoTable.id, input.id))
+      .execute();
+
+    if (existingRecord.length === 0) {
+      throw new Error(`Service info with id ${input.id} not found`);
+    }
+
+    // Build the update object with only provided fields
+    const updateData: Partial<typeof serviceInfoTable.$inferInsert> = {
+      updated_at: new Date()
+    };
+
+    if (input.title !== undefined) {
+      updateData.title = input.title;
+    }
+
+    if (input.description !== undefined) {
+      updateData.description = input.description;
+    }
+
+    if (input.icon !== undefined) {
+      updateData.icon = input.icon;
+    }
+
+    if (input.is_featured !== undefined) {
+      updateData.is_featured = input.is_featured;
+    }
+
+    if (input.display_order !== undefined) {
+      updateData.display_order = input.display_order;
+    }
+
+    // Update the service info record
+    const result = await db.update(serviceInfoTable)
+      .set(updateData)
+      .where(eq(serviceInfoTable.id, input.id))
+      .returning()
+      .execute();
+
+    return result[0];
+  } catch (error) {
+    console.error('Service info update failed:', error);
+    throw error;
+  }
+};

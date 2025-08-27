@@ -1,15 +1,37 @@
+import { db } from '../db';
+import { companyInfoTable } from '../db/schema';
 import { type UpdateCompanyInfoInput, type CompanyInfo } from '../schema';
+import { eq } from 'drizzle-orm';
 
 export async function updateCompanyInfo(input: UpdateCompanyInfoInput): Promise<CompanyInfo> {
-    // This is a placeholder declaration! Real code should be implemented here.
-    // The goal of this handler is to update company information sections
-    // allowing the logistics company to modify their mission, vision, values, or history
-    // content displayed on the About Us page.
-    return Promise.resolve({
-        id: input.id,
-        section: 'mission' as const, // Placeholder section
-        title: input.title || 'Placeholder Title',
-        content: input.content || 'Placeholder content',
-        updated_at: new Date()
-    } as CompanyInfo);
+  try {
+    // Build the update object with only provided fields
+    const updateData: Partial<typeof companyInfoTable.$inferInsert> = {
+      updated_at: new Date()
+    };
+
+    if (input.title !== undefined) {
+      updateData.title = input.title;
+    }
+
+    if (input.content !== undefined) {
+      updateData.content = input.content;
+    }
+
+    // Update the company info record
+    const result = await db.update(companyInfoTable)
+      .set(updateData)
+      .where(eq(companyInfoTable.id, input.id))
+      .returning()
+      .execute();
+
+    if (result.length === 0) {
+      throw new Error(`Company info with id ${input.id} not found`);
+    }
+
+    return result[0];
+  } catch (error) {
+    console.error('Company info update failed:', error);
+    throw error;
+  }
 }

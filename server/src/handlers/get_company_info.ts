@@ -1,9 +1,19 @@
+import { db } from '../db';
+import { companyInfoTable } from '../db/schema';
 import { type CompanyInfo } from '../schema';
+import { asc } from 'drizzle-orm';
 
-export async function getCompanyInfo(): Promise<CompanyInfo[]> {
-    // This is a placeholder declaration! Real code should be implemented here.
-    // The goal of this handler is to fetch all company information sections
-    // (mission, vision, values, history) for display on the About Us page
-    // of the logistics company website.
-    return [];
-}
+export const getCompanyInfo = async (): Promise<CompanyInfo[]> => {
+  try {
+    // Fetch all company information sections ordered by enum definition order for consistency
+    const result = await db.select()
+      .from(companyInfoTable)
+      .orderBy(asc(companyInfoTable.section))
+      .execute();
+
+    return result;
+  } catch (error) {
+    console.error('Failed to fetch company information:', error);
+    throw error;
+  }
+};
